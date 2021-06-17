@@ -1,0 +1,4 @@
+# pg_migrate extension
+comment = 'Postgres migration utility'
+default_version = '0.0.1'
+relocatable = true
