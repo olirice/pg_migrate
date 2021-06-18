@@ -1,0 +1,9 @@
+create extension "uuid-ossp";
+create extension pg_migrate;
+INFO:  wova ran CREATE FUNCTION create extension pg_migrate;
+SELECT upgrade_statement from migrations.revision;
+      upgrade_statement
+------------------------------
+ create extension pg_migrate;
+(1 row)
+
