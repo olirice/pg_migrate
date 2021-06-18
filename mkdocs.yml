@@ -1,4 +1,5 @@
 site_name: pg_migrate
+site_url: https://olirice.github.io/pg_migrate
 site_description: A PostgreSQL extension for migrations and DDL tracking
 
 theme:
