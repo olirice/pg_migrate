@@ -1,4 +1,6 @@
 results/
+regression.diffs
+regression.out
 
 docs/*
 # Temporary Python files
