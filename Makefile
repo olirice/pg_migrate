@@ -1,5 +1,5 @@
 EXTENSION = pg_migrate	# the extensions name
-DATA = pg_migrate--0.0.1.sql  # script files to install
+DATA = ./src/sql/pg_migrate--0.0.1.sql  # script files to install
 
 # postgres build stuff
 PG_CONFIG = pg_config
