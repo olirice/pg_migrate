@@ -1,6 +1,7 @@
 EXTENSION = pg_migrate	# the extensions name
 DATA = sql/pg_migrate--0.0.1.sql  # script files to install
 REGRESS = pg_migrate_test
+REGRESS_OPTS = --inputdir=test
 
 # postgres build stuff
 PG_CONFIG = pg_config
