@@ -24,7 +24,18 @@ Requires:
 
 ```shell
 git clone https://github.com/olirice/pg_migrate.git
+cd pg_migrate
 make install
+```
+
+### Testing
+Requires:
+
+ - Postgres 11+
+
+
+```shell
+make install && make installcheck
 ```
 
 ### Usage
