@@ -1,5 +1,20 @@
 # pg_migrate
 
+
+<p>
+
+<a href="https://github.com/olirice/pg_migrate/actions"><img src="https://github.com/olirice/pg_migrate/workflows/test/badge.svg" alt="Tests" height="18"></a>
+
+</p>
+
+---
+
+**Documentation**: WIP 
+
+**Source Code**: <a href="https://github.com/olirice/pg_migrate" target="_blank">https://github.com/olirice/pg_migrate</a>
+
+---
+
 A PostgreSQL Extension adding DDL tracking and migration tooling.
 
 
@@ -35,7 +50,7 @@ Requires:
 
 
 ```shell
-PGUSER=postgres make install && PGUSER=postgres make installcheck
+PGUSER=postgres make install && PGUSER=postgres make installcheck || (cat regression.diffs && /bin/false)
 ```
 
 ### Usage

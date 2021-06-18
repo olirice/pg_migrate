@@ -50,7 +50,7 @@ begin
 	end if;
 
 	-- Convenience debug output
-	raise info '%', session_user || ' ran '|| tg_tag || ' ' || curr_query;
+	raise info '%', 'ran ' || tg_tag || ' ' || curr_query;
 
 	-- Mark the current revision as
 	update migrations.revision set is_current = false where id = db_rev.id;

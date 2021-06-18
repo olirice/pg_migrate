@@ -1,6 +1,6 @@
 create extension "uuid-ossp";
 create extension pg_migrate;
-INFO:  postgres ran CREATE FUNCTION create extension pg_migrate;
+INFO:  ran CREATE FUNCTION create extension pg_migrate;
 SELECT upgrade_statement from migrations.revision;
       upgrade_statement       
 ------------------------------
