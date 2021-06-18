@@ -1,7 +1,10 @@
+-----------------
+-- Persistence -- 
+-----------------
+
 -- create extension if not exists "uuid-ossp";
 create schema migrations;
 
--- Tracks all DDL statements
 create table migrations.revision (
 	id uuid primary key default uuid_generate_v4(),
 	-- SQL Contents
@@ -22,8 +25,52 @@ create table migrations.revision (
 	txid bigint not null default txid_current(),
 	created_at timestamp not null default (now() at time zone 'utc'),
 	exclude (is_current with =) where (is_current)
-	--unique (upgrade_statement, txid, created_at)
 );
+
+-- Registry of every DDL statement
+create table migrations.statement (
+	id uuid primary key default uuid_generate_v4(),
+	stmt text not null,
+	is_current bool not null default false,
+	parent_id uuid not null,
+	txid bigint not null default txid_current(),
+	created_at timestamp not null default (now() at time zone 'utc'),
+
+    -- constraints
+	exclude (is_current with =) where (is_current)
+);
+
+-- Revisions should be cut once happy with the DB state
+-- upgrades_state
+create table migrations.rev (
+	id uuid primary key default uuid_generate_v4(),
+    -- Optionally set to override statement execution
+    -- so a more concise migration can be written
+    -- should be tested during insert to validate it
+    -- preudces a schema matching the underlying statemnts
+	upgrade_statement text not null,
+    -- Inverse of the upgrade
+	downgrade_statement text,
+    -- Human readable message to log
+	"message" text,
+    -- Allow unit test failure on this migration
+    allow_unit_test_failure bool default false,
+    -- Preceeding migrations
+    -- Human readable names to refer to this migration
+	-- tags text[] not null default '{}'::text[],
+	created_at timestamp not null default (now() at time zone 'utc')
+);
+
+
+create table migrations.revision_parent (
+    id uuid primary key default uuid_generate_v4(),
+    revision_id uuid not null,
+    parent_id uuid not null,
+	created_at timestamp not null default (now() at time zone 'utc'),
+    constraint fk_revision_id foreign key (revision_id) references migrations.revision(id),
+    constraint fk_parent_id foreign key (parent_id) references migrations.revision(id)
+);
+
 
 
 create or replace function migrations.persist_ddl()
@@ -66,11 +113,90 @@ end;
 $$ language plpgsql;
 
 
+----------------
+-- Inspection --
+-----------------
+
+create function migrations.current_revision_id()
+returns uuid
+as $$
+    select id from migrations.revision where is_current;
+$$ language sql;
+
+
+create function migrations.current_revision()
+returns migrations.revision 
+as $$
+    select * from migrations.revision where is_current;
+$$ language sql;
+
+
+---------------------
+-- User Operations -- 
+---------------------
+
+create function migrations.set_downgrade(
+    downgrade_statement text,
+    revision_id uuid default null
+)
+returns uuid as 
+$$
+#variable_conflict use_column
+<<decl>>
+/* Registers a downgrade migration statement with the 
+*/
+declare
+    downgrade_statement text := downgrade_statement;
+    revision_id uuid := revision_id;
+    edited_revision_id uuid;
+begin
+
+    update
+        migrations.revision
+    into
+        edited_revision_id
+    set
+        downgrade_statement = decl.downgrade_statement
+    where 
+        id = coalesce(
+                decl.revision_id,
+                (select xyz.id from migrations.revision xyz where is_current limit 1)
+        )
+    returning id;
+
+    -- If edited revision_id is null, no update occured
+    if edited_revision_id is null
+        then raise exception 'requested revision not found';
+    end if;
+    
+    -- Successful exit
+    return edited_revision_id;
+end;
+
+$$ language plpgsql;
+
+
+create type migrations.test_result as (
+    ok bool,
+    message text
+);
+
+-- TODO
+create or replace function migrations.test_current_revision()
+returns migrations.test_result as 
+$$
+begin
+    return (true, 'nada')::migrations.test_result;
+end;
+
+$$ language plpgsql;
+
+
 create event trigger migrations_on_ddl
 on ddl_command_end
 execute procedure migrations.persist_ddl();
 
-
+/*
 create or replace function migrations.run()
 returns void as
 $$
@@ -84,3 +210,4 @@ begin
 	END LOOP;
 end
 $$ language plpgsql;
+*/
