@@ -42,19 +42,19 @@ declare
 begin
 	-- Retrieve the current database revision
 	select * into db_rev from migrations.revision where is_current;
-		
+
 	/* If multiple ddl statements occur within a transaction, the event trigger
 	fires multiple times. The duplicates must be filtered */
 	if (curr_query, curr_txid, curr_ts) = (db_rev.upgrade_statement, db_rev.txid, db_rev.created_at) then
 		return;
 	end if;
-	
+
 	-- Convenience debug output
 	raise info '%', session_user || ' ran '|| tg_tag || ' ' || curr_query;
-	
-	-- Mark the current revision as 
+
+	-- Mark the current revision as
 	update migrations.revision set is_current = false where id = db_rev.id;
-	
+
 	insert into migrations.revision(upgrade_statement, txid, parent_ids, is_current)
 	values (
 		curr_query,
@@ -66,7 +66,7 @@ begin
 		true
 	);
 	return;
-	
+
 end;
 $$ language plpgsql;
 
