@@ -17,11 +17,12 @@ jobs:
     - name: 'Check Out'
       uses: actions/checkout@v2
 
-    - name: 'Install'
+    - name: 'Restart PG with Config'
       run: |
-        sudo apt-get update
+        sudo cp ./ci/pg_hba.conf /etc/postgresql/$PG_VERSION/main/pg_hba.conf
         sudo /etc/init.d/postgresql stop
         sudo /etc/init.d/postgresql start
+
     - name: 'Build & Test'
       run: |
         export PATH=/usr/lib/postgresql/13/bin/:$PATH
