@@ -35,7 +35,7 @@ Requires:
 
 
 ```shell
-make install && make installcheck
+PGUSER=postgres make install && PGUSER=postgres make installcheck
 ```
 
 ### Usage
