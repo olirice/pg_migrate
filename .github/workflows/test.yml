@@ -25,7 +25,7 @@ jobs:
         sudo apt-get -y install postgresql
 
         # Start the database server
-        pg_ctl start -l logfile
+        postgres -D /usr/local/pgsql/data >logfile 2>&1 &
 
     - name: test
       run: |
