@@ -1,3 +1,6 @@
+expected/
+results/
+
 docs/*
 # Temporary Python files
 *.pyc
