@@ -3,10 +3,7 @@ site_url: https://olirice.github.io/pg_migrate
 site_description: A PostgreSQL extension for migrations and DDL tracking
 
 theme:
-    name: 'readthedocs'
-
-extra_css:
-    - css/custom.css
+    name: 'material'
 
 repo_name: olirice/pg_migrate
 repo_url: https://github.com/olirice/pg_migrate
