@@ -26,5 +26,8 @@ jobs:
     - name: 'Build & Test'
       run: |
         export PATH=/usr/lib/postgresql/13/bin/:$PATH
-        PGUSER=postgres PGPORT=5432 sudo make install && make installcheck || (cat regression.diffs && /bin/false)
+        make
+        sudo make install
+        PGUSER=postgres PGPORT=5432 make installcheck
+        #|| (cat regression.diffs && /bin/false)
 
