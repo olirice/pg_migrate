@@ -1,5 +1,4 @@
 -- create extension if not exists "uuid-ossp";
-
 create schema migrations;
 
 -- Tracks all DDL statements
@@ -21,18 +20,15 @@ create table migrations.revision (
 	tags text[] not null default '{}'::text[],
 	-- Transaction id
 	txid bigint not null default txid_current(),
-	-- Track insert order
-	seq_id serial not null,
 	created_at timestamp not null default (now() at time zone 'utc'),
 	exclude (is_current with =) where (is_current)
-	-- event triggers will fire multiple times if multiple ddl statements
-	-- are contained within the same transaction. We must de-duplicate
 	--unique (upgrade_statement, txid, created_at)
 );
 
 
-create or replace function migrations.persist_ddl() returns event_trigger
-as $$
+create or replace function migrations.persist_ddl()
+returns event_trigger as
+$$
 declare
 	db_rev migrations.revision;
 	db_rev_id uuid;
@@ -66,19 +62,22 @@ begin
 		true
 	);
 	return;
-
 end;
 $$ language plpgsql;
 
-create event trigger migrations_on_ddl on ddl_command_end execute procedure migrations.persist_ddl();
--- drop event trigger migrations_on_ddl
 
-create or replace function migrations.run() returns void
-as $$
+create event trigger migrations_on_ddl
+on ddl_command_end
+execute procedure migrations.persist_ddl();
+
+
+create or replace function migrations.run()
+returns void as
+$$
 declare
 	rev migrations.revision;
 begin
-	for rev in select * from migrations.revision --order by created_at asc
+	for rev in select * from migrations.revision
 	LOOP
 		raise info '%', rev.id;
 		execute rev.upgrade_statement;
