@@ -24,9 +24,8 @@ jobs:
         # If you want a specific version, use 'postgresql-12' or similar instead of 'postgresql':
         sudo apt-get -y install postgresql
 
-        # Start the database server
-        postgres -D /usr/local/pgsql/data >logfile 2>&1 &
-
     - name: test
       run: |
+        # Start the database server
+        postgres -D /usr/local/pgsql/data >logfile 2>&1 &
         make install && make installcheck
