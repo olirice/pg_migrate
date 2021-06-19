@@ -14,7 +14,7 @@
 
 ---
 
-A PostgreSQL extension for migrations and DDL tracking.
+`pg_migrate` is a PostgreSQL extension for migrations and DDL tracking.
 
 
-<p align="center">&mdash;&mdash;  &mdash;&mdash;</p>
+Out-of-the-box `pg_migrate` stores a record of all DDL (schema changes) and can replay them for repeatable setup of database schemas.

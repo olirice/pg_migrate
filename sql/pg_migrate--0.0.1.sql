@@ -5,34 +5,13 @@
 -- create extension if not exists "uuid-ossp";
 create schema migrations;
 
-create table migrations.revision (
-	id uuid primary key default uuid_generate_v4(),
-	-- SQL Contents
-	upgrade_statement text not null,
-	-- TODO: Allow manual population
-	downgrade_statement text,
-	-- Is this the current revision of the database
-	-- Only 1 row may be 'true'
-	is_current bool not null default false,
-	-- Human readable message
-	"message" text,
-	-- Immediately preceeding revision.ids
-	-- Multiple parents are allowed for branch merging
-	parent_ids uuid[] not null default '{}'::uuid[],
-	-- Human readable name
-	tags text[] not null default '{}'::text[],
-	-- Transaction id
-	txid bigint not null default txid_current(),
-	created_at timestamp not null default (now() at time zone 'utc'),
-	exclude (is_current with =) where (is_current)
-);
 
 -- Registry of every DDL statement
 create table migrations.statement (
 	id uuid primary key default uuid_generate_v4(),
 	stmt text not null,
 	is_current bool not null default false,
-	parent_id uuid not null,
+	parent_id uuid,
 	txid bigint not null default txid_current(),
 	created_at timestamp not null default (now() at time zone 'utc'),
 
@@ -42,8 +21,10 @@ create table migrations.statement (
 
 -- Revisions should be cut once happy with the DB state
 -- upgrades_state
-create table migrations.rev (
+create table migrations.revision (
 	id uuid primary key default uuid_generate_v4(),
+    -- Last statement to include in this revision
+    statement_id uuid,
     -- Optionally set to override statement execution
     -- so a more concise migration can be written
     -- should be tested during insert to validate it
@@ -57,8 +38,9 @@ create table migrations.rev (
     allow_unit_test_failure bool default false,
     -- Preceeding migrations
     -- Human readable names to refer to this migration
-	-- tags text[] not null default '{}'::text[],
-	created_at timestamp not null default (now() at time zone 'utc')
+	created_at timestamp not null default (now() at time zone 'utc'),
+
+    constraint fk_statement_id foreign key (statement_id) references migrations.statement(id)
 );
 
 
@@ -72,39 +54,44 @@ create table migrations.revision_parent (
 );
 
 
-
-create or replace function migrations.persist_ddl()
+create or replace function migrations.persist_statement()
 returns event_trigger as
 $$
 declare
-	db_rev migrations.revision;
-	db_rev_id uuid;
+	db_stmt migrations.statement;
+	db_stmt_id uuid;
+	rev_count int;
 	curr_ts timestamp := (select (now() at time zone 'utc'));
 	curr_txid bigint := txid_current();
 	curr_query text := current_query();
 begin
-	-- Retrieve the current database revision
-	select * into db_rev from migrations.revision where is_current;
+	-- Retrieve the current database statement
+	select * into db_stmt from migrations.statement where is_current;
 
 	/* If multiple ddl statements occur within a transaction, the event trigger
 	fires multiple times. The duplicates must be filtered */
-	if (curr_query, curr_txid, curr_ts) = (db_rev.upgrade_statement, db_rev.txid, db_rev.created_at) then
+	if (curr_query, curr_txid, curr_ts) = (db_stmt.stmt, db_stmt.txid, db_stmt.created_at) then
 		return;
 	end if;
 
 	-- Convenience debug output
-	raise info '%', 'ran ' || tg_tag || ' ' || curr_query;
+	raise info '%', 'Detected ' || tg_tag || ' ' || curr_query;
 
-	-- Mark the current revision as
-	update migrations.revision set is_current = false where id = db_rev.id;
+	-- Mark the current statement as is_current
+	update
+        migrations.statement
+    set
+        is_current = false
+    where
+        id = db_stmt.id;
 
-	insert into migrations.revision(upgrade_statement, txid, parent_ids, is_current)
+	insert into migrations.statement(stmt, txid, parent_id, is_current)
 	values (
 		curr_query,
 		curr_txid,
-		case
-			when db_rev.id is not null then ARRAY[db_rev.id]
-			else '{}'::uuid[]
+        case
+			when db_stmt.id is not null then db_stmt.id
+			else null::uuid
 		end,
 		true
 	);
@@ -116,18 +103,17 @@ $$ language plpgsql;
 ----------------
 -- Inspection --
 -----------------
-
-create function migrations.current_revision_id()
+create function migrations.current_statement_id()
 returns uuid
 as $$
-    select id from migrations.revision where is_current;
+    select id from migrations.statement where is_current;
 $$ language sql;
 
 
-create function migrations.current_revision()
-returns migrations.revision 
+create function migrations.current_statement()
+returns migrations.statement 
 as $$
-    select * from migrations.revision where is_current;
+    select * from migrations.statement where is_current;
 $$ language sql;
 
 
@@ -194,7 +180,7 @@ $$ language plpgsql;
 
 create event trigger migrations_on_ddl
 on ddl_command_end
-execute procedure migrations.persist_ddl();
+execute procedure migrations.persist_statement();
 
 /*
 create or replace function migrations.run()

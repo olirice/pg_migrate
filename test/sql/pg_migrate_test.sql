@@ -7,29 +7,24 @@ create extension pg_migrate;
 
 
 -- Select from upgrade table
-select upgrade_statement from migrations.revision;
+select stmt from migrations.statement;
 
 
 -- Get revision_id
 begin;
     create function test_fn () returns bool as $$ select true $$ language sql;
-    select migrations.current_revision_id() is not null;
+    select migrations.current_statement_id() is not null;
 rollback;
 
 
 -- Get revision
 begin;
     create function test_fn () returns bool as $$ select true $$ language sql;
-    select (migrations.current_revision()).id is not null;
+    select (migrations.current_statement()).id is not null;
 rollback;
 
 
--- Execute register_downgrade
-begin;
-    create function test_fn () returns bool as $$ select true $$ language sql;
-    select migrations.set_downgrade('drop function test_fn;') is not null;
-rollback;
-
+-- TODO: register a downgrade
 -- TODO: cut revision from statemetns
 -- TODO: cut revision & apply downgrade
 -- TODO: cut revision, apply downgarde, test revision
