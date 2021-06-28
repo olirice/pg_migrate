@@ -10,14 +10,14 @@ create extension pg_migrate;
 select stmt from migrations.statement;
 
 
--- Get revision_id
+-- current_statement_id
 begin;
     create function test_fn () returns bool as $$ select true $$ language sql;
     select migrations.current_statement_id() is not null;
 rollback;
 
 
--- Get revision
+-- current_statement
 begin;
     create function test_fn () returns bool as $$ select true $$ language sql;
     select (migrations.current_statement()).id is not null;

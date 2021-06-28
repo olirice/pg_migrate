@@ -8,7 +8,7 @@ select stmt from migrations.statement;
 ------
 (0 rows)
 
--- Get revision_id
+-- current_statement_id
 begin;
     create function test_fn () returns bool as $$ select true $$ language sql;
 INFO:  Detected CREATE FUNCTION create function test_fn () returns bool as $$ select true $$ language sql;
@@ -19,7 +19,7 @@ INFO:  Detected CREATE FUNCTION create function test_fn () returns bool as $$ se
 (1 row)
 
 rollback;
--- Get revision
+-- current_statement
 begin;
     create function test_fn () returns bool as $$ select true $$ language sql;
 INFO:  Detected CREATE FUNCTION create function test_fn () returns bool as $$ select true $$ language sql;
